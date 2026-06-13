@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>קופה — בת גלים</title>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="src/ui/styles.css">
+  <script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
+</head>
+<body>
+  <header class="app-header">
+    <h1>🏄 קופה — בת גלים</h1>
+    <span class="spacer"></span>
+    <span class="pill" id="freshPill">טוען…</span>
+    <button class="icon-btn" id="settingsBtn" title="הגדרות">⚙️</button>
+  </header>
+
+  <main class="layout">
+    <!-- Catalog / search -->
+    <section class="pane">
+      <div class="search-bar">
+        <input id="searchInput" type="text" placeholder='חפש מוצר, מק"ט…' autocomplete="off">
+        <button class="scan-btn" id="scanBtn">📷 סרוק</button>
+      </div>
+      <div class="section-lbl" id="catalogLbl">במלאי</div>
+      <div class="results" id="results"></div>
+    </section>
+
+    <!-- Cart (desktop) -->
+    <aside class="pane cart-pane">
+      <div class="cart-head"><span>עגלה</span></div>
+      <div id="cartPanel"></div>
+    </aside>
+  </main>
+
+  <!-- Mobile bottom bar -->
+  <div class="mobile-bar mobile-only">
+    <div>
+      <div class="mtotal" id="mobileTotal">₪0</div>
+      <div class="msub" id="mobileSub">0 פריטים</div>
+    </div>
+    <button class="open-cart" id="openCartBtn">עגלה ←</button>
+  </div>
+
+  <!-- Cart sheet (mobile) -->
+  <div class="sheet-backdrop" id="cartSheetBd" data-close="cartSheet"></div>
+  <div class="sheet" id="cartSheet">
+    <div class="sheet-head"><h2>עגלה</h2><button class="x" data-close="cartSheet">✕</button></div>
+    <div id="cartSheetBody"></div>
+  </div>
+
+  <!-- Customer sheet -->
+  <div class="sheet-backdrop" id="customerSheetBd" data-close="customerSheet"></div>
+  <div class="sheet" id="customerSheet">
+    <div class="sheet-head"><h2>פרטי לקוח</h2><button class="x" data-close="customerSheet">✕</button></div>
+    <div class="modal-body">
+      <div class="field"><label>שם מלא <span class="req">*</span></label><input id="custName" type="text" autocomplete="off"></div>
+      <div class="field"><label>טלפון <span class="req">*</span></label><input id="custPhone" type="tel" inputmode="tel" autocomplete="off"></div>
+      <div class="field id-field" id="idField">
+        <label>תעודת זהות <span class="req" id="custIdReq">*</span></label>
+        <input id="custId" type="text" inputmode="numeric" autocomplete="off">
+        <div class="hint">נדרשת כשהסכום מעל ₪5,000</div>
+      </div>
+      <button class="btn btn-primary" id="toPacketBtn" style="width:100%">צור בקשת מכירה ←</button>
+    </div>
+  </div>
+
+  <!-- Packet sheet -->
+  <div class="sheet-backdrop" id="packetSheetBd" data-close="packetSheet"></div>
+  <div class="sheet" id="packetSheet">
+    <div class="sheet-head"><h2>בקשת מכירה למשרד</h2><button class="x" data-close="packetSheet">✕</button></div>
+    <div class="modal-body">
+      <div class="packet" id="packetText"></div>
+      <ul class="checklist">
+        <li>התקשרו ללקוח וגבו תשלום</li>
+        <li class="hl">הפיקו חשבונית — מבת גלים</li>
+        <li>הפיקו תעודת החזרה (34) מקושרת לתעודות המשלוח (31)</li>
+      </ul>
+      <div class="btn-row">
+        <button class="btn btn-ghost" id="copyBtn">📋 העתק</button>
+        <button class="btn btn-ghost" id="waBtn">💬 WhatsApp</button>
+        <button class="btn btn-primary" id="submitBtn">שלח למשרד</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scanner sheet -->
+  <div class="sheet-backdrop" id="scanSheetBd" data-close="scanSheet"></div>
+  <div class="sheet" id="scanSheet">
+    <div class="sheet-head"><h2>סריקת ברקוד</h2><button class="x" data-close="scanSheet">✕</button></div>
+    <div id="scanWrap"><video id="scanVideo" playsinline muted></video><div class="scan-frame"></div></div>
+  </div>
+
+  <!-- Settings sheet -->
+  <div class="sheet-backdrop" id="settingsSheetBd" data-close="settingsSheet"></div>
+  <div class="sheet" id="settingsSheet">
+    <div class="sheet-head"><h2>מקורות נתונים</h2><button class="x" data-close="settingsSheet">✕</button></div>
+    <div class="modal-body">
+      <div class="field"><label>מלאי (CSV של תעודות 31/34)</label><input id="srcStock" type="text"></div>
+      <div class="field"><label>קטלוג מוצרים (CSV)</label><input id="srcCatalog" type="text"></div>
+      <div class="field"><label>דוח מחירים (CSV)</label><input id="srcPrices" type="text"></div>
+      <button class="btn btn-primary" id="saveSourcesBtn" style="width:100%">שמור וטען מחדש</button>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+  <script type="module" src="src/ui/app.js"></script>
+</body>
+</html>

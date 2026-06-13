@@ -1,0 +1,18 @@
+# Business data — NEVER commit. Stock export contains COST/margin (NullFinansitItemPrice).
+data/
+*.xlsx
+*.csv
+
+# Reference copy of the existing scanner (fetched, not part of this app)
+scripts/scanner_index.html
+
+# Internal working docs (contain Drive/Notion IDs) — keep local, out of the public repo
+PLAN.md
+ARCHITECTURE.md
+LOG.md
+STATE.md
+
+# Local tooling / OS
+node_modules/
+.DS_Store
+*.log
