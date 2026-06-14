@@ -79,9 +79,9 @@
       </ul>
       <div class="btn-row">
         <button class="btn btn-ghost" id="copyBtn">📋 העתק</button>
-        <button class="btn btn-ghost" id="waBtn">💬 WhatsApp</button>
-        <button class="btn btn-primary" id="submitBtn">שלח למשרד</button>
+        <button class="btn btn-primary" id="waBtn">💬 שלח ב-WhatsApp</button>
       </div>
+      <button class="btn btn-ghost" id="newSaleBtn" style="width:100%;margin-top:10px">✓ מכירה חדשה</button>
     </div>
   </div>
 
@@ -101,6 +101,11 @@
       <div class="field"><label>קטלוג מוצרים (CSV)</label><input id="srcCatalog" type="text"></div>
       <div class="field"><label>דוח מחירים (CSV)</label><input id="srcPrices" type="text"></div>
       <button class="btn btn-primary" id="saveSourcesBtn" style="width:100%">שמור וטען מחדש</button>
+      <div class="section-lbl" style="padding-inline:0;margin-top:18px">או טען קבצים מהמכשיר (לא נשמר באינטרנט)</div>
+      <div class="field"><label>מלאי (CSV)</label><input id="fileStock" type="file" accept=".csv,.txt"></div>
+      <div class="field"><label>קטלוג (CSV)</label><input id="fileCatalog" type="file" accept=".csv,.txt"></div>
+      <div class="field"><label>מחירים (CSV)</label><input id="filePrices" type="file" accept=".csv,.txt"></div>
+      <button class="btn btn-ghost" id="loadFilesBtn" style="width:100%">טען מקבצים</button>
     </div>
   </div>
 

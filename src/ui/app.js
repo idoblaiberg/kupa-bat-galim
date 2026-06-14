@@ -184,9 +184,12 @@ function bindPacket() {
     const url = "https://wa.me/?text=" + encodeURIComponent(packetToText(lastPacket));
     window.open(url, "_blank", "noopener");
   });
-  el("submitBtn").addEventListener("click", () => {
-    // Backend (Notion + WhatsApp) not wired yet — copy/share works in the meantime.
-    toast("שליחה אוטומטית למשרד — בקרוב. בינתיים: העתק / WhatsApp");
+  el("newSaleBtn").addEventListener("click", () => {
+    cart.clear();
+    closeSheet("packetSheet");
+    el("searchInput").value = "";
+    showInStock();
+    toast("מוכן למכירה הבאה");
   });
 }
 
@@ -219,6 +222,15 @@ function bindSettings() {
   el("saveSourcesBtn").addEventListener("click", () => {
     setSources({ stock: el("srcStock").value.trim(), catalog: el("srcCatalog").value.trim(), prices: el("srcPrices").value.trim() });
     toast("נשמר — טוען מחדש"); location.reload();
+  });
+  el("loadFilesBtn").addEventListener("click", async () => {
+    const pick = (id) => el(id).files[0];
+    const [s, c, p] = [pick("fileStock"), pick("fileCatalog"), pick("filePrices")];
+    if (!s || !c || !p) { toast("בחרו את שלושת הקבצים"); return; }
+    try {
+      buildFromTexts(await s.text(), await c.text(), await p.text()); // caches locally, never uploaded
+      toast("נטען מהמכשיר — טוען מחדש"); location.reload();
+    } catch (e) { toast("שגיאה בקריאת הקבצים: " + e.message); }
   });
 }
 
