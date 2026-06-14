@@ -6,7 +6,6 @@
   <title>קופה — בת גלים</title>
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="src/ui/styles.css">
-  <script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
 </head>
 <body>
   <header class="app-header">
@@ -83,13 +82,6 @@
       </div>
       <button class="btn btn-ghost" id="newSaleBtn" style="width:100%;margin-top:10px">✓ מכירה חדשה</button>
     </div>
-  </div>
-
-  <!-- Scanner sheet -->
-  <div class="sheet-backdrop" id="scanSheetBd" data-close="scanSheet"></div>
-  <div class="sheet" id="scanSheet">
-    <div class="sheet-head"><h2>סריקת ברקוד</h2><button class="x" data-close="scanSheet">✕</button></div>
-    <div id="scanWrap"><video id="scanVideo" playsinline muted></video><div class="scan-frame"></div></div>
   </div>
 
   <!-- Settings sheet -->

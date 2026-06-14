@@ -1,12 +1,14 @@
 // Kupa app — boot, render, and wire the whole flow. Vanilla ES modules, RTL Hebrew.
 import { loadData, getSources, setSources, buildFromTexts } from "../services/dataLoader.js";
 import { createCart } from "../store/cartStore.js";
-import { createScanner } from "../services/scanner.js";
 import { buildPacket, packetToText } from "../services/packetBuilder.js";
 import { formatILS } from "../utils/money.js";
 import { el, create, clear, toast } from "./dom.js";
 
-let resolver, cart, scanner, stats;
+// Barcode capture is delegated to the sibling yamit-scanner app (same origin).
+const SCANNER_URL = "../yamit-scanner/";
+
+let resolver, cart, stats;
 
 boot();
 
@@ -15,12 +17,13 @@ async function boot() {
     const { data, fresh, cachedAt } = await loadData();
     resolver = data.resolver; stats = data.stats;
     cart = createCart();
-    scanner = createScanner();
     cart.onChange(renderCart);
+    cart.hydrateFromStorage();            // restore cart across the scanner round-trip / refreshes
     wireUI();
     setFreshness(fresh, cachedAt);
     showInStock();
     renderCart(cart.getState());
+    consumeScanHash();                    // a barcode handed back from the scanner app
   } catch (e) {
     clear(el("results"));
     el("results").append(create("div", { class: "empty" },
@@ -193,23 +196,32 @@ function bindPacket() {
   });
 }
 
-// ── Scanner ───────────────────────────────────────────────────────────────
-async function openScanner() {
-  openSheet("scanSheet");
-  try {
-    await scanner.start(el("scanVideo"), (code) => {
-      const r = resolver.resolveByBarcode(code);
-      if (r) { cart.addProduct(r, 1); toast(`נוסף: ${r.name}`); scanner.stop(el("scanVideo")); closeSheet("scanSheet"); }
-      else toast(`ברקוד ${code} לא נמצא`);
-    });
-  } catch (e) { toast("שגיאת מצלמה: " + e.message); }
+// ── Scanner handoff (sibling yamit-scanner app, same origin) ────────────────
+// Navigate to the scanner in "kupa mode"; it returns to us with #scan=<barcode> after one scan.
+function openScanner() {
+  const ret = location.origin + location.pathname;
+  location.href = SCANNER_URL + "?kupa=1&return=" + encodeURIComponent(ret);
+}
+
+// Consume a barcode the scanner handed back via the URL hash, then clear it.
+function consumeScanHash() {
+  const m = /[#&]scan=([^&]+)/.exec(location.hash);
+  if (!m) return;
+  const code = decodeURIComponent(m[1]);
+  history.replaceState(null, "", location.pathname + location.search);
+  const r = resolver.resolveByBarcode(code);
+  if (r) { cart.addProduct(r, 1); toast(`נוסף: ${r.name}`); }
+  else {
+    el("searchInput").value = code;
+    showResults(resolver.search(code, { inStockOnly: true, limit: 60 }));
+    toast(`ברקוד ${code} לא נמצא במלאי`);
+  }
 }
 
 // ── Sheets ────────────────────────────────────────────────────────────────
 function openSheet(id) { el(id).classList.add("show"); el(id + "Bd").classList.add("show"); }
 function closeSheet(id) {
   el(id).classList.remove("show"); el(id + "Bd").classList.remove("show");
-  if (id === "scanSheet") scanner?.stop(el("scanVideo"));
 }
 
 // ── Settings ──────────────────────────────────────────────────────────────

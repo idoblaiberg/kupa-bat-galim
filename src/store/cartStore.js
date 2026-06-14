@@ -4,8 +4,10 @@
 import { allocateOrigin31 } from "../services/stockEngine.js";
 
 export const ID_THRESHOLD = 5000; // ₪ — above this, customer ID number is required.
+const LS_CART = "kupa_cart";      // persists the cart across the scanner round-trip / refreshes
 const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
 const clampPct = (p) => Math.min(100, Math.max(0, Number(p) || 0));
+const hasLS = () => typeof localStorage !== "undefined"; // false under node tests
 
 export function createCart() {
   const state = {
@@ -14,8 +16,25 @@ export function createCart() {
     customer: { fullName: "", phone: "", idNumber: "" },
   };
   const listeners = new Set();
-  const emit = () => listeners.forEach((fn) => fn(getState()));
+  const persist = () => {
+    if (!hasLS()) return;
+    try { localStorage.setItem(LS_CART, JSON.stringify({ lines: state.lines, wholeListDiscountPct: state.wholeListDiscountPct, customer: state.customer })); } catch {}
+  };
+  const emit = () => { persist(); listeners.forEach((fn) => fn(getState())); };
   const find = (sku) => state.lines.find((l) => l.sku === sku);
+
+  // Restore a previously-persisted cart (saved lines already carry unitPrice/lots/etc.).
+  function hydrate(saved) {
+    if (!saved || !Array.isArray(saved.lines)) return;
+    state.lines = saved.lines;
+    state.wholeListDiscountPct = clampPct(saved.wholeListDiscountPct);
+    state.customer = { fullName: "", phone: "", idNumber: "", ...(saved.customer || {}) };
+    emit();
+  }
+  function hydrateFromStorage() {
+    if (!hasLS()) return;
+    try { const raw = localStorage.getItem(LS_CART); if (raw) hydrate(JSON.parse(raw)); } catch {}
+  }
 
   // --- mutations ---
   function addProduct(resolved, qty = 1) {
@@ -49,7 +68,11 @@ export function createCart() {
   function setUnitPrice(sku, price) { const l = find(sku); if (l) { l.unitPrice = Math.max(0, round2(Number(price) || 0)); l.priceSource = "manual"; emit(); } }
   function setWholeDiscount(pct) { state.wholeListDiscountPct = clampPct(pct); emit(); }
   function setCustomer(partial) { Object.assign(state.customer, partial); emit(); }
-  function clear() { state.lines = []; state.wholeListDiscountPct = 0; state.customer = { fullName: "", phone: "", idNumber: "" }; emit(); }
+  function clear() {
+    state.lines = []; state.wholeListDiscountPct = 0; state.customer = { fullName: "", phone: "", idNumber: "" };
+    if (hasLS()) { try { localStorage.removeItem(LS_CART); } catch {} }
+    emit();
+  }
 
   // --- derived (computed, never stored) ---
   function lineTotals(l) {
@@ -93,5 +116,5 @@ export function createCart() {
   function onChange(fn) { listeners.add(fn); return () => listeners.delete(fn); }
 
   return { addProduct, setQty, removeLine, setLineDiscount, setUnitPrice, setWholeDiscount,
-    setCustomer, clear, totals, lineAllocations, validation, getState, onChange, _raw: state };
+    setCustomer, clear, hydrate, hydrateFromStorage, totals, lineAllocations, validation, getState, onChange, _raw: state };
 }
