@@ -25,11 +25,15 @@ async function boot() {
     renderCart(cart.getState());
     consumeScanHash();                    // a barcode handed back from the scanner app
   } catch (e) {
+    const hasConfig = !!localStorage.getItem("kupa_sources");
+    const msg = hasConfig
+      ? `שגיאה בטעינת הנתונים: ${e.message}`
+      : "לא נטענו נתונים. הגדירו את קישורי ה-CSV (מלאי, קטלוג, מחירים) בהגדרות.";
     clear(el("results"));
     el("results").append(create("div", { class: "empty" },
-      "לא נטענו נתונים. הגדירו את קישורי ה-CSV (מלאי, קטלוג, מחירים) בהגדרות.",
+      msg,
       create("br"), create("br"), create("button", { class: "btn btn-primary", onclick: openSettings }, "פתח הגדרות")));
-    if (!localStorage.getItem("kupa_sources")) openSettings(); // first run only: jump straight to source setup
+    if (!hasConfig) openSettings(); // first run only: jump straight to source setup
   }
 }
 
