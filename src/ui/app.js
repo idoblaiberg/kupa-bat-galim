@@ -29,7 +29,7 @@ async function boot() {
     el("results").append(create("div", { class: "empty" },
       "לא נטענו נתונים. הגדירו את קישורי ה-CSV (מלאי, קטלוג, מחירים) בהגדרות.",
       create("br"), create("br"), create("button", { class: "btn btn-primary", onclick: openSettings }, "פתח הגדרות")));
-    openSettings(); // first run on a fresh deploy: jump straight to source setup
+    if (!localStorage.getItem("kupa_sources")) openSettings(); // first run only: jump straight to source setup
   }
 }
 
