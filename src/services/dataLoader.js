@@ -21,14 +21,22 @@ export function getSources() {
 }
 export function setSources(s) { localStorage.setItem(LS_SOURCES, JSON.stringify(s)); }
 
-// Normalise Google Drive share links to direct-download URLs.
+// Google Drive doesn't send Access-Control-Allow-Origin headers on downloads,
+// so all Drive links are routed through a CORS proxy.
+const CORS_PROXY = "https://corsproxy.io/?";
+
 function normalizeUrl(url) {
-  const fileMatch = /drive\.google\.com\/file\/d\/([^/?]+)/.exec(url);
-  if (fileMatch) return `https://drive.google.com/uc?export=download&id=${fileMatch[1]}`;
-  const openMatch = /drive\.google\.com\/open\?.*[?&]id=([^&]+)/.exec(url);
-  if (openMatch) return `https://drive.google.com/uc?export=download&id=${openMatch[1]}`;
-  const sheetsMatch = /docs\.google\.com\/spreadsheets\/d\/([^/?]+)/.exec(url);
-  if (sheetsMatch) return `https://docs.google.com/spreadsheets/d/${sheetsMatch[1]}/export?format=csv`;
+  const driveFile = /drive\.google\.com\/file\/d\/([^/?]+)/.exec(url);
+  if (driveFile) {
+    return CORS_PROXY + encodeURIComponent(`https://drive.google.com/uc?export=download&id=${driveFile[1]}`);
+  }
+  const driveOpen = /drive\.google\.com\/open\?.*[?&]id=([^&]+)/.exec(url);
+  if (driveOpen) {
+    return CORS_PROXY + encodeURIComponent(`https://drive.google.com/uc?export=download&id=${driveOpen[1]}`);
+  }
+  // Google Sheets "Publish to web" URL — has native CORS headers, no proxy needed.
+  const sheets = /docs\.google\.com\/spreadsheets\/d\/([^/?]+)/.exec(url);
+  if (sheets) return `https://docs.google.com/spreadsheets/d/${sheets[1]}/pub?output=csv`;
   return url;
 }
 
