@@ -21,33 +21,9 @@ export function getSources() {
 }
 export function setSources(s) { localStorage.setItem(LS_SOURCES, JSON.stringify(s)); }
 
-// Google Drive doesn't send Access-Control-Allow-Origin headers on downloads,
-// so all Drive links are routed through a CORS proxy.
-const CORS_PROXY = "https://corsproxy.io/?";
-
-function normalizeUrl(url) {
-  const driveFile = /drive\.google\.com\/file\/d\/([^/?]+)/.exec(url);
-  if (driveFile) {
-    return CORS_PROXY + encodeURIComponent(`https://drive.google.com/uc?export=download&id=${driveFile[1]}`);
-  }
-  const driveOpen = /drive\.google\.com\/open\?.*[?&]id=([^&]+)/.exec(url);
-  if (driveOpen) {
-    return CORS_PROXY + encodeURIComponent(`https://drive.google.com/uc?export=download&id=${driveOpen[1]}`);
-  }
-  // Google Sheets "Publish to web" URL — has native CORS headers, no proxy needed.
-  const sheets = /docs\.google\.com\/spreadsheets\/d\/([^/?]+)/.exec(url);
-  if (sheets) return `https://docs.google.com/spreadsheets/d/${sheets[1]}/pub?output=csv`;
-  return url;
-}
-
 async function fetchText(url) {
-  const r = await fetch(normalizeUrl(url), { cache: "no-store" });
-  if (!r.ok) {
-    const hint = /drive\.google\.com/.test(url)
-      ? " — Google Drive חוסם גישה ישירה. פתחו את הקובץ בGoogle Sheets ← שתף ← פרסם לאינטרנט ← CSV, והשתמשו בקישור שמתקבל."
-      : "";
-    throw new Error(`HTTP ${r.status}${hint}`);
-  }
+  const r = await fetch(url, { cache: "no-store" });
+  if (!r.ok) throw new Error(`HTTP ${r.status} for ${url}`);
   return r.text();
 }
 
