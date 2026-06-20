@@ -42,7 +42,12 @@ function normalizeUrl(url) {
 
 async function fetchText(url) {
   const r = await fetch(normalizeUrl(url), { cache: "no-store" });
-  if (!r.ok) throw new Error(`HTTP ${r.status} for ${url}`);
+  if (!r.ok) {
+    const hint = /drive\.google\.com/.test(url)
+      ? " — Google Drive חוסם גישה ישירה. פתחו את הקובץ בGoogle Sheets ← שתף ← פרסם לאינטרנט ← CSV, והשתמשו בקישור שמתקבל."
+      : "";
+    throw new Error(`HTTP ${r.status}${hint}`);
+  }
   return r.text();
 }
 
