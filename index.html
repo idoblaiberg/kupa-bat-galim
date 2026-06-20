@@ -87,17 +87,11 @@
   <!-- Settings sheet -->
   <div class="sheet-backdrop" id="settingsSheetBd" data-close="settingsSheet"></div>
   <div class="sheet" id="settingsSheet">
-    <div class="sheet-head"><h2>מקורות נתונים</h2><button class="x" data-close="settingsSheet">✕</button></div>
+    <div class="sheet-head"><h2>הגדרות</h2><button class="x" data-close="settingsSheet">✕</button></div>
     <div class="modal-body">
-      <div class="field"><label>מלאי (CSV של תעודות 31/34)</label><input id="srcStock" type="text"></div>
-      <div class="field"><label>קטלוג מוצרים (CSV)</label><input id="srcCatalog" type="text"></div>
-      <div class="field"><label>דוח מחירים (CSV)</label><input id="srcPrices" type="text"></div>
+      <div class="field"><label>מלאי — קישור CSV (תעודות 31/34)</label><input id="srcStock" type="text" inputmode="url" autocomplete="off"></div>
+      <div class="field"><label>מחירים — קישור CSV (אתר)</label><input id="srcPrices" type="text" inputmode="url" autocomplete="off"></div>
       <button class="btn btn-primary" id="saveSourcesBtn" style="width:100%">שמור וטען מחדש</button>
-      <div class="section-lbl" style="padding-inline:0;margin-top:18px">או טען קבצים מהמכשיר (לא נשמר באינטרנט)</div>
-      <div class="field"><label>מלאי (CSV)</label><input id="fileStock" type="file" accept=".csv,.txt"></div>
-      <div class="field"><label>קטלוג (CSV)</label><input id="fileCatalog" type="file" accept=".csv,.txt"></div>
-      <div class="field"><label>מחירים (CSV)</label><input id="filePrices" type="file" accept=".csv,.txt"></div>
-      <button class="btn btn-ghost" id="loadFilesBtn" style="width:100%">טען מקבצים</button>
     </div>
   </div>
 

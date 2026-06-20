@@ -1,5 +1,5 @@
 // Kupa app — boot, render, and wire the whole flow. Vanilla ES modules, RTL Hebrew.
-import { loadData, getSources, setSources, buildFromTexts } from "../services/dataLoader.js";
+import { loadData, getSources, setSources } from "../services/dataLoader.js";
 import { createCart } from "../store/cartStore.js";
 import { buildPacket, packetToText } from "../services/packetBuilder.js";
 import { formatILS } from "../utils/money.js";
@@ -231,22 +231,13 @@ function closeSheet(id) {
 // ── Settings ──────────────────────────────────────────────────────────────
 function openSettings() {
   const s = getSources();
-  el("srcStock").value = s.stock; el("srcCatalog").value = s.catalog; el("srcPrices").value = s.prices;
+  el("srcStock").value = s.stock; el("srcPrices").value = s.prices;
   openSheet("settingsSheet");
 }
 function bindSettings() {
   el("saveSourcesBtn").addEventListener("click", () => {
-    setSources({ stock: el("srcStock").value.trim(), catalog: el("srcCatalog").value.trim(), prices: el("srcPrices").value.trim() });
+    setSources({ stock: el("srcStock").value.trim(), prices: el("srcPrices").value.trim() });
     toast("נשמר — טוען מחדש"); location.reload();
-  });
-  el("loadFilesBtn").addEventListener("click", async () => {
-    const pick = (id) => el(id).files[0];
-    const [s, c, p] = [pick("fileStock"), pick("fileCatalog"), pick("filePrices")];
-    if (!s || !c || !p) { toast("בחרו את שלושת הקבצים"); return; }
-    try {
-      buildFromTexts(await s.text(), await c.text(), await p.text()); // caches locally, never uploaded
-      toast("נטען מהמכשיר — טוען מחדש"); location.reload();
-    } catch (e) { toast("שגיאה בקריאת הקבצים: " + e.message); }
   });
 }
 
