@@ -21,8 +21,19 @@ export function getSources() {
 }
 export function setSources(s) { localStorage.setItem(LS_SOURCES, JSON.stringify(s)); }
 
+// Convert a Google Sheets share/edit URL to its CSV export URL.
+// Works for any sheet shared as "Anyone with the link".
+function normalizeUrl(url) {
+  const sheets = /docs\.google\.com\/spreadsheets\/d\/([^/?]+)/.exec(url);
+  if (sheets) {
+    const gid = /[?&]gid=(\d+)/.exec(url);
+    return `https://docs.google.com/spreadsheets/d/${sheets[1]}/export?format=csv${gid ? `&gid=${gid[1]}` : ""}`;
+  }
+  return url;
+}
+
 async function fetchText(url) {
-  const r = await fetch(url, { cache: "no-store" });
+  const r = await fetch(normalizeUrl(url), { cache: "no-store" });
   if (!r.ok) throw new Error(`HTTP ${r.status} for ${url}`);
   return r.text();
 }
