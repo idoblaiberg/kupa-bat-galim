@@ -12,6 +12,7 @@
     <h1>🏄 קופה — בת גלים</h1>
     <span class="spacer"></span>
     <span class="pill" id="freshPill">טוען…</span>
+    <button class="icon-btn" id="historyBtn" title="מכירות קודמות">📋</button>
     <button class="icon-btn" id="settingsBtn" title="הגדרות">⚙️</button>
   </header>
 
@@ -82,6 +83,13 @@
       </div>
       <button class="btn btn-ghost" id="newSaleBtn" style="width:100%;margin-top:10px">✓ מכירה חדשה</button>
     </div>
+  </div>
+
+  <!-- History sheet -->
+  <div class="sheet-backdrop" id="historySheetBd" data-close="historySheet"></div>
+  <div class="sheet" id="historySheet">
+    <div class="sheet-head"><h2>מכירות קודמות</h2><button class="x" data-close="historySheet">✕</button></div>
+    <div id="historySheetBody"></div>
   </div>
 
   <!-- Settings sheet -->

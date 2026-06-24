@@ -1,5 +1,6 @@
 // Kupa app — boot, render, and wire the whole flow. Vanilla ES modules, RTL Hebrew.
 import { loadData, getSources, setSources } from "../services/dataLoader.js";
+import { saveSale, getSales, deleteSale, clearAllSales } from "../services/salesLog.js";
 import { createCart } from "../store/cartStore.js";
 import { buildPacket, packetToText } from "../services/packetBuilder.js";
 import { formatILS } from "../utils/money.js";
@@ -55,6 +56,7 @@ function wireUI() {
     searchTimer = setTimeout(() => (q.trim().length < 2 ? showInStock() : showResults(resolver.search(q, { inStockOnly: true, limit: 60 }))), 160);
   });
   el("scanBtn").addEventListener("click", openScanner);
+  el("historyBtn").addEventListener("click", openHistory);
   el("settingsBtn").addEventListener("click", openSettings);
   el("openCartBtn").addEventListener("click", () => openSheet("cartSheet"));
   document.querySelectorAll("[data-close]").forEach((b) => b.addEventListener("click", () => closeSheet(b.dataset.close)));
@@ -183,6 +185,13 @@ function openPacket() {
   openSheet("packetSheet");
 }
 function completeSale(msg) {
+  const state = cart.getState();
+  saveSale({
+    packetText: lastPacket ? packetToText(lastPacket) : "",
+    customer: { ...state.customer },
+    totals: state.totals,
+    lines: state.lines.map((l) => ({ name: l.name, qty: l.qty, net: l.net })),
+  });
   cart.clear();
   closeSheet("packetSheet");
   el("searchInput").value = "";
@@ -232,6 +241,30 @@ function openSheet(id) {
 function closeSheet(id) {
   el(id).classList.remove("show"); el(id + "Bd").classList.remove("show");
   if (!document.querySelector(".sheet.show")) document.body.style.overflow = "";
+}
+
+// ── History ───────────────────────────────────────────────────────────────
+function openHistory() { renderHistory(); openSheet("historySheet"); }
+function renderHistory() {
+  const body = el("historySheetBody"); clear(body);
+  const sales = getSales();
+  if (!sales.length) { body.append(create("div", { class: "empty" }, "אין מכירות שמורות")); return; }
+  body.append(create("div", { style: "padding:12px 14px 0" },
+    create("button", { class: "btn btn-ghost", style: "width:100%",
+      onclick: () => { clearAllSales(); renderHistory(); toast("נמחקו כל המכירות"); } }, "מחק הכל")));
+  sales.forEach((s) => {
+    const d = new Date(s.at);
+    const dateStr = d.toLocaleDateString("he-IL") + " " + d.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" });
+    const itemsSummary = (s.lines || []).map((l) => `${l.name} ×${l.qty}`).join(", ");
+    body.append(create("div", { class: "sale-row" },
+      create("div", { class: "sale-info" },
+        create("div", { class: "sale-name" }, s.customer?.fullName || "(ללא שם)"),
+        create("div", { class: "sale-sub" }, s.customer?.phone || "", " · ", dateStr),
+        create("div", { class: "sale-sub sale-items" }, itemsSummary)),
+      create("div", { class: "sale-total" }, formatILS(s.totals?.total ?? 0)),
+      create("button", { class: "rm", title: "מחק",
+        onclick: () => { deleteSale(s.id); renderHistory(); } }, "✕")));
+  });
 }
 
 // ── Settings ──────────────────────────────────────────────────────────────
