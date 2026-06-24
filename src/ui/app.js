@@ -225,9 +225,13 @@ function consumeScanHash() {
 }
 
 // ── Sheets ────────────────────────────────────────────────────────────────
-function openSheet(id) { el(id).classList.add("show"); el(id + "Bd").classList.add("show"); }
+function openSheet(id) {
+  el(id).classList.add("show"); el(id + "Bd").classList.add("show");
+  document.body.style.overflow = "hidden";
+}
 function closeSheet(id) {
   el(id).classList.remove("show"); el(id + "Bd").classList.remove("show");
+  if (!document.querySelector(".sheet.show")) document.body.style.overflow = "";
 }
 
 // ── Settings ──────────────────────────────────────────────────────────────
