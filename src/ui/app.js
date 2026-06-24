@@ -182,22 +182,24 @@ function openPacket() {
   el("packetText").textContent = text;
   openSheet("packetSheet");
 }
+function completeSale(msg) {
+  cart.clear();
+  closeSheet("packetSheet");
+  el("searchInput").value = "";
+  showInStock();
+  toast(msg);
+}
 function bindPacket() {
   el("copyBtn").addEventListener("click", async () => {
-    try { await navigator.clipboard.writeText(packetToText(lastPacket)); toast("הועתק ✓"); }
+    try { await navigator.clipboard.writeText(packetToText(lastPacket)); completeSale("הועתק ✓"); }
     catch { toast("העתקה נכשלה"); }
   });
   el("waBtn").addEventListener("click", () => {
     const url = "https://wa.me/?text=" + encodeURIComponent(packetToText(lastPacket));
     window.open(url, "_blank", "noopener");
+    completeSale("נשלח ב-WhatsApp ✓");
   });
-  el("newSaleBtn").addEventListener("click", () => {
-    cart.clear();
-    closeSheet("packetSheet");
-    el("searchInput").value = "";
-    showInStock();
-    toast("מוכן למכירה הבאה");
-  });
+  el("newSaleBtn").addEventListener("click", () => completeSale("מוכן למכירה הבאה"));
 }
 
 // ── Scanner handoff (sibling yamit-scanner app, same origin) ────────────────
