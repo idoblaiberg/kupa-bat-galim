@@ -19,13 +19,45 @@ Responsive (mobile counter + desktop), RTL Hebrew, vanilla JS — no build step.
 - The packet can be **copied** or shared to **WhatsApp**; automated Notion + WhatsApp submission is a
   follow-up (needs a small serverless endpoint to hold the Notion token).
 
-## Data sources (configured at runtime — never committed)
-Set three published-CSV URLs in the app's ⚙️ Settings (persisted per device):
-1. **Stock** — scheduled CSV copy of `תעודות משלוח` (FinDocLines, `NullFinansit*` headers).
-2. **Catalog** — full product list (`מספר פריט / שם פריט / מספר חליפי`).
-3. **Prices** — website price report (`מק"ט / מחיר רגיל (₪) / מחיר מבצע (₪)`).
+## Access & authentication
 
-> ⚠️ The stock export contains **cost** figures — it is gitignored and must never be committed.
+The app is restricted to three Yamit staff emails via Google Sign-In. Data is fetched directly
+from Google Drive using the OAuth access token — no credentials or data are stored in the repo.
+
+### One-time Google Cloud setup (already done — for reference)
+
+1. **Project**: `Kupa Bat Galim` (`kupa-bat-galim`) in Google Cloud Console
+2. **APIs enabled**: Google Drive API (`APIs & Services → Library → Google Drive API → Enable`)
+3. **OAuth Client**: Web application, authorized JS origin: `https://idoblaiberg.github.io`
+   (`APIs & Services → Credentials → OAuth 2.0 Client ID`)
+4. **OAuth consent screen**: Testing mode, test users added:
+   - `blaiberg.ido@gmail.com`
+   - `windpointbg@gmail.com`
+   - `ysbyamit@gmail.com`
+5. **Client ID** is in `src/config.js` (safe to commit — useless without the Drive files)
+
+### Data files on Google Drive
+
+Both files must be shared with the three emails above (not public):
+
+| Purpose | Type | Drive ID (in `src/config.js`) |
+|---------|------|-------------------------------|
+| Stock — Finansit 31/34 export | Google Sheet | `DRIVE.stockSheetId` |
+| Prices — website price report | CSV file | `DRIVE.pricesFileId` |
+
+> ⚠️ The stock export contains **cost** figures — files must stay private on Drive and must never be committed to the repo.
+
+### Updating data
+
+1. Export the new CSV from Finansit / the website
+2. In Google Drive, right-click the file → **"Upload new version"** (keeps the same file ID)
+3. Done — next sign-in fetches fresh data automatically
+
+### Adding a new authorized user
+
+1. Google Cloud Console → `APIs & Services → OAuth consent screen → Test users → Add users`
+2. Add the new Gmail address
+3. Share both Drive files with the new address
 
 ## Run locally
 ```bash
