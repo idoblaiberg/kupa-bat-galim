@@ -28,8 +28,9 @@ async function boot() {
       consumeScanHash();
     } catch (e) {
       if (String(e).includes("TOKEN_EXPIRED")) { sessionStorage.clear(); location.reload(); return; }
+      console.error("loadDataAuthenticated failed:", e);
       clear(el("results"));
-      el("results").append(create("div", { class: "empty" }, "שגיאה בטעינת הנתונים. בדקו חיבור לאינטרנט."));
+      el("results").append(create("div", { class: "empty" }, `שגיאה: ${e.message || e}`));
     }
   });
 }
