@@ -44,7 +44,10 @@ function setFreshness(fresh, cachedAt) {
 // ── Catalog / search ──────────────────────────────────────────────────────
 let searchTimer;
 function wireUI() {
-  el("signOutBtn").addEventListener("click", signOut);
+  el("signOutBtn").addEventListener("click", () => {
+    const email = getUserEmail() || "";
+    if (confirm(`מחובר: ${email}\n\nלהתנתק?`)) signOut();
+  });
   el("signOutBtn").title = getUserEmail() || "התנתק";
   el("searchInput").addEventListener("input", (e) => {
     clearTimeout(searchTimer);
