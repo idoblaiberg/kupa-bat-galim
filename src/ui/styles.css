@@ -117,6 +117,20 @@ input { font-family:inherit; }
   opacity:0; transform:translateY(10px); transition:.2s; }
 #toast .t.show { opacity:1; transform:translateY(0); }
 
+/* ── Login screen ── */
+.login-screen { position:fixed; inset:0; background:var(--brand); z-index:100;
+  display:flex; align-items:center; justify-content:center; }
+.login-card { background:var(--surface); border-radius:var(--radius); padding:40px 36px;
+  text-align:center; max-width:320px; width:90%; box-shadow:0 8px 40px rgba(0,0,0,.25); }
+.login-logo { font-size:48px; margin-bottom:12px; }
+.login-card h2 { font-size:20px; font-weight:800; margin-bottom:6px; }
+.login-card p { color:var(--muted); font-size:13px; margin-bottom:28px; }
+.signin-btn { display:inline-flex; align-items:center; justify-content:center; gap:10px;
+  width:100%; padding:13px 20px; background:#fff; border:1.5px solid var(--line);
+  border-radius:10px; font-size:15px; font-weight:600; color:var(--ink); cursor:pointer; }
+.signin-btn:hover { background:#f8fafc; border-color:#c0c8d4; }
+.login-error { color:var(--danger); font-size:13px; margin-top:14px; min-height:18px; }
+
 /* ── Responsive ── */
 @media (max-width:860px) {
   .layout { grid-template-columns:1fr; padding:10px; }

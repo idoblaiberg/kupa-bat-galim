@@ -1,5 +1,6 @@
 // Kupa app — boot, render, and wire the whole flow. Vanilla ES modules, RTL Hebrew.
-import { loadData, getSources, setSources } from "../services/dataLoader.js";
+import { loadDataAuthenticated, getSources, setSources } from "../services/dataLoader.js";
+import { initAuth, signOut, getUserEmail } from "../auth.js";
 import { createCart } from "../store/cartStore.js";
 import { buildPacket, packetToText } from "../services/packetBuilder.js";
 import { formatILS } from "../utils/money.js";
@@ -13,28 +14,24 @@ let resolver, cart, stats;
 boot();
 
 async function boot() {
-  try {
-    const { data, fresh, cachedAt } = await loadData();
-    resolver = data.resolver; stats = data.stats;
-    cart = createCart();
-    cart.onChange(renderCart);
-    cart.hydrateFromStorage();            // restore cart across the scanner round-trip / refreshes
-    wireUI();
-    setFreshness(fresh, cachedAt);
-    showInStock();
-    renderCart(cart.getState());
-    consumeScanHash();                    // a barcode handed back from the scanner app
-  } catch (e) {
-    const hasConfig = !!localStorage.getItem("kupa_sources");
-    const msg = hasConfig
-      ? `שגיאה בטעינת הנתונים: ${e.message}`
-      : "לא נטענו נתונים. הגדירו את קישורי ה-CSV (מלאי, קטלוג, מחירים) בהגדרות.";
-    clear(el("results"));
-    el("results").append(create("div", { class: "empty" },
-      msg,
-      create("br"), create("br"), create("button", { class: "btn btn-primary", onclick: openSettings }, "פתח הגדרות")));
-    if (!hasConfig) openSettings(); // first run only: jump straight to source setup
-  }
+  await initAuth(async (accessToken) => {
+    try {
+      const { data, fresh, cachedAt } = await loadDataAuthenticated(accessToken);
+      resolver = data.resolver; stats = data.stats;
+      cart = createCart();
+      cart.onChange(renderCart);
+      cart.hydrateFromStorage();
+      wireUI();
+      setFreshness(fresh, cachedAt);
+      showInStock();
+      renderCart(cart.getState());
+      consumeScanHash();
+    } catch (e) {
+      if (String(e).includes("TOKEN_EXPIRED")) { sessionStorage.clear(); location.reload(); return; }
+      clear(el("results"));
+      el("results").append(create("div", { class: "empty" }, "שגיאה בטעינת הנתונים. בדקו חיבור לאינטרנט."));
+    }
+  });
 }
 
 function setFreshness(fresh, cachedAt) {
@@ -47,6 +44,8 @@ function setFreshness(fresh, cachedAt) {
 // ── Catalog / search ──────────────────────────────────────────────────────
 let searchTimer;
 function wireUI() {
+  el("signOutBtn").addEventListener("click", signOut);
+  el("signOutBtn").title = getUserEmail() || "התנתק";
   el("searchInput").addEventListener("input", (e) => {
     clearTimeout(searchTimer);
     const q = e.target.value;

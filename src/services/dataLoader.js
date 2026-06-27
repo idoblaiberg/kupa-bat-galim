@@ -6,6 +6,7 @@ import { buildStock } from "./stockEngine.js";
 import { buildFromStock } from "./catalog.js";
 import { parsePrices } from "./prices.js";
 import { createResolver } from "./productResolver.js";
+import { DRIVE } from "../config.js";
 
 const LS_SOURCES = "kupa_sources";
 const LS_CACHE = "kupa_cache";
@@ -72,6 +73,36 @@ export async function loadData() {
     localStorage.setItem(LS_CACHE, JSON.stringify({ raw, cachedAt: new Date().toISOString() }));
     return { data: build(raw), fresh: true, cachedAt: new Date().toISOString() };
   } catch (err) {
+    const cached = localStorage.getItem(LS_CACHE);
+    if (cached) {
+      const { raw, cachedAt } = JSON.parse(cached);
+      return { data: build(raw), fresh: false, cachedAt, error: String(err) };
+    }
+    throw err;
+  }
+}
+
+async function fetchFromDrive(fileId, accessToken, isSheet = false) {
+  const url = isSheet
+    ? `https://www.googleapis.com/drive/v3/files/${fileId}/export?mimeType=text%2Fcsv`
+    : `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` }, cache: "no-store" });
+  if (res.status === 401) throw new Error("TOKEN_EXPIRED");
+  if (!res.ok) throw new Error(`Drive ${res.status}`);
+  return res.text();
+}
+
+export async function loadDataAuthenticated(accessToken) {
+  try {
+    const [stock, prices] = await Promise.all([
+      fetchFromDrive(DRIVE.stockSheetId, accessToken, true),
+      fetchFromDrive(DRIVE.pricesFileId, accessToken, false),
+    ]);
+    const raw = { stock, prices };
+    localStorage.setItem(LS_CACHE, JSON.stringify({ raw, cachedAt: new Date().toISOString() }));
+    return { data: build(raw), fresh: true, cachedAt: new Date().toISOString() };
+  } catch (err) {
+    if (String(err).includes("TOKEN_EXPIRED")) throw err;
     const cached = localStorage.getItem(LS_CACHE);
     if (cached) {
       const { raw, cachedAt } = JSON.parse(cached);
