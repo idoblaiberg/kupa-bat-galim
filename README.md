@@ -36,28 +36,32 @@ from Google Drive using the OAuth access token — no credentials or data are st
    - `ysbyamit@gmail.com`
 5. **Client ID** is in `src/config.js` (safe to commit — useless without the Drive files)
 
-### Data files on Google Drive
+### Local data files (gitignored — never commit)
 
-Both files must be shared with the three emails above (not public):
+The `data/` folder and all `*.csv` / `*.xlsx` files are in `.gitignore` because the stock export
+contains **cost/margin figures** that must stay private.
 
-| Purpose | Type | Drive ID (in `src/config.js`) |
-|---------|------|-------------------------------|
-| Stock — Finansit 31/34 export | Google Sheet | `DRIVE.stockSheetId` |
-| Prices — website price report | CSV file | `DRIVE.pricesFileId` |
+```
+data/
+├── stock_authoritative_line_items.csv   ← Finansit 31/34 export (NullFinansit* headers)
+└── prices.csv                           ← website price report (מק"ט / מחיר רגיל / מחיר מבצע)
+```
 
-> ⚠️ The stock export contains **cost** figures — files must stay private on Drive and must never be committed to the repo.
+**To run locally with fresh data:**
+1. Export the stock CSV from Finansit → save as `data/stock_authoritative_line_items.csv`
+2. Export the prices CSV from the website → save as `data/prices.csv`
+3. `node scripts/static-server.mjs` — the app loads from local files in dev mode
 
-### Updating data
-
-1. Export the new CSV from Finansit / the website
-2. In Google Drive, right-click the file → **"Upload new version"** (keeps the same file ID)
-3. Done — next sign-in fetches fresh data automatically
+**To update production data (live site):**
+1. Export the new CSV
+2. In Google Drive, right-click the file → **"Upload new version"** (preserves the file ID)
+3. Done — the next sign-in fetches fresh data automatically
 
 ### Adding a new authorized user
 
 1. Google Cloud Console → `APIs & Services → OAuth consent screen → Test users → Add users`
-2. Add the new Gmail address
-3. Share both Drive files with the new address
+2. Add their Gmail address
+3. Share both Drive files with that address (Drive → Share)
 
 ## Run locally
 ```bash
