@@ -4,17 +4,26 @@
 // (verified: retail == cost×1.18 on 177/181 sampled SKUs). cost = NullFinansitItemPrice.
 import { num } from "../utils/csv.js";
 
-const COL = { sku: 'מק"ט', regular: "מחיר רגיל (₪)", sale: "מחיר מבצע (₪)" };
+const COL = { sku: 'מק"ט', regular: "מחיר רגיל (₪)", sale: "מחיר מבצע (₪)", sport: "ענף ספורט" };
 export const VAT_MARKUP = 1.18; // retail ≈ cost incl. 18% VAT
 
+/**
+ * Parse the website price report. Besides the customer price, it carries the product
+ * taxonomy (ענף ספורט = sport branch) used for category browsing — note this only covers
+ * the ~30% of branch SKUs that exist on the website; the rest stay uncategorized (→ "שונות").
+ * @returns {{ priceMap: Map, sportMap: Map }}
+ */
 export function parsePrices(rows) {
-  const bySku = new Map();
+  const priceMap = new Map();
+  const sportMap = new Map();
   for (const r of rows) {
     const sku = String(r[COL.sku] ?? "").trim();
     if (!sku) continue;
-    bySku.set(sku, { regular: num(r[COL.regular]), sale: num(r[COL.sale]) });
+    priceMap.set(sku, { regular: num(r[COL.regular]), sale: num(r[COL.sale]) });
+    const sport = String(r[COL.sport] ?? "").trim();
+    if (sport) sportMap.set(sku, sport);
   }
-  return bySku;
+  return { priceMap, sportMap };
 }
 
 /**

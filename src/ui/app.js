@@ -1,5 +1,6 @@
 // Kupa app — boot, render, and wire the whole flow. Vanilla ES modules, RTL Hebrew.
 import { loadDataAuthenticated, getSources, setSources } from "../services/dataLoader.js";
+import { MISC_SPORT } from "../services/productResolver.js";
 import { initAuth, signOut, getUserEmail } from "../auth.js";
 import { createCart } from "../store/cartStore.js";
 import { buildPacket, packetToText } from "../services/packetBuilder.js";
@@ -23,7 +24,7 @@ async function boot() {
       cart.hydrateFromStorage();
       wireUI();
       setFreshness(fresh, cachedAt);
-      showInStock();
+      showCategoryGrid();
       renderCart(cart.getState());
       consumeScanHash();
     } catch (e) {
@@ -53,9 +54,24 @@ function wireUI() {
   el("searchInput").addEventListener("input", (e) => {
     clearTimeout(searchTimer);
     const q = e.target.value;
-    // Scope search to branch stock (every sellable line needs a source-31). Catalog still powers
-    // the matching (rich names + barcodes), but results are limited to what's actually at Bat Galim.
-    searchTimer = setTimeout(() => (q.trim().length < 2 ? showInStock() : showResults(resolver.search(q, { inStockOnly: true, limit: 60 }))), 160);
+    const trimmed = q.trim();
+    el("searchClear").classList.toggle("hidden", trimmed.length === 0);
+    // Empty → category tiles. Exact category name (incl. "שונות") → that category's items.
+    // Otherwise scope a text search to branch stock (every sellable line needs a source-31);
+    // the catalog powers matching (rich names + barcodes) but results stay limited to Bat Galim.
+    searchTimer = setTimeout(() => {
+      if (!trimmed) return showCategoryGrid();
+      if (resolver.sportCounts()[trimmed] != null) return showBySport(trimmed);
+      const list = resolver.search(q, { inStockOnly: true, limit: 60 });
+      el("catalogLbl").textContent = `במלאי בבת גלים (${list.length})`;
+      showResults(list);
+    }, 160);
+  });
+  el("searchClear").addEventListener("click", () => {
+    el("searchInput").value = "";
+    el("searchClear").classList.add("hidden");
+    showCategoryGrid();
+    el("searchInput").focus();
   });
   el("scanBtn").addEventListener("click", openScanner);
   el("settingsBtn").addEventListener("click", openSettings);
@@ -63,12 +79,36 @@ function wireUI() {
   document.querySelectorAll("[data-close]").forEach((b) => b.addEventListener("click", () => closeSheet(b.dataset.close)));
 }
 
-function showInStock() {
-  el("catalogLbl").textContent = `במלאי בבת גלים (${stats.inStock})`;
-  showResults(resolver.inStockList());
+// Empty-search landing: a grid of sport-branch tiles instead of the full 199-item wall.
+function showCategoryGrid() {
+  el("catalogLbl").textContent = "מה מחפשים?";
+  el("results").classList.add("hidden");
+  const grid = el("categoryGrid");
+  clear(grid);
+  grid.classList.remove("hidden");
+  const counts = resolver.sportCounts();
+  // Count desc, but the "שונות" catch-all always sits last.
+  Object.entries(counts)
+    .sort((a, b) => (a[0] === MISC_SPORT ? 1 : b[0] === MISC_SPORT ? -1 : b[1] - a[1]))
+    .forEach(([sport, n]) => grid.append(categoryTile(sport, n)));
+}
+function categoryTile(sport, n) {
+  return create("button", { class: "cat-tile" + (sport === MISC_SPORT ? " misc" : ""),
+    onclick: () => { el("searchInput").value = sport; el("searchClear").classList.remove("hidden"); showBySport(sport); } },
+    create("span", { class: "cat-name" }, sport),
+    create("span", { class: "cat-count" }, `${n} פריטים במלאי`));
+}
+// All in-stock items for one sport branch.
+function showBySport(sport) {
+  const list = resolver.inStockBySport(sport);
+  el("catalogLbl").textContent = `${sport} (${list.length})`;
+  showResults(list);
 }
 function showResults(list) {
-  const box = el("results"); clear(box);
+  el("categoryGrid").classList.add("hidden");
+  const box = el("results");
+  box.classList.remove("hidden");
+  clear(box);
   if (!list.length) { box.append(create("div", { class: "empty" }, "לא נמצאו פריטים")); return; }
   list.forEach((r) => box.append(productRow(r)));
 }
@@ -198,7 +238,8 @@ function bindPacket() {
     cart.clear();
     closeSheet("packetSheet");
     el("searchInput").value = "";
-    showInStock();
+    el("searchClear").classList.add("hidden");
+    showCategoryGrid();
     toast("מוכן למכירה הבאה");
   });
 }
@@ -220,7 +261,10 @@ function consumeScanHash() {
   if (r) { cart.addProduct(r, 1); toast(`נוסף: ${r.name}`); }
   else {
     el("searchInput").value = code;
-    showResults(resolver.search(code, { inStockOnly: true, limit: 60 }));
+    el("searchClear").classList.remove("hidden");
+    const list = resolver.search(code, { inStockOnly: true, limit: 60 });
+    el("catalogLbl").textContent = `במלאי בבת גלים (${list.length})`;
+    showResults(list);
     toast(`ברקוד ${code} לא נמצא במלאי`);
   }
 }

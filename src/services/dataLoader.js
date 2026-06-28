@@ -42,8 +42,8 @@ async function fetchText(url) {
 function build({ stock, prices }) {
   const { items, issues } = buildStock(parseCSV(stock));
   const cat = buildFromStock(items);
-  const priceMap = parsePrices(parseCSV(prices || ""));
-  const resolver = createResolver(items, cat, priceMap);
+  const { priceMap, sportMap } = parsePrices(parseCSV(prices || ""));
+  const resolver = createResolver(items, cat, priceMap, sportMap);
   const inStock = resolver.inStockList();
   return {
     resolver,

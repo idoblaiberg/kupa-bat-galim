@@ -3,12 +3,16 @@
 import { resolvePrice } from "./prices.js";
 import { normCode } from "../utils/normCode.js";
 
+// Items with no sport in the price report are grouped under this catch-all category.
+export const MISC_SPORT = "שונות";
+
 /**
  * @param {Map} stock  - from buildStock().items
  * @param {object} catalog - from parseCatalog()
  * @param {Map} priceMap - from parsePrices()
+ * @param {Map} [sportMap] - sku → ענף ספורט, from parsePrices()
  */
-export function createResolver(stock, catalog, priceMap) {
+export function createResolver(stock, catalog, priceMap, sportMap = new Map()) {
   // Barcode index: STOCK barcodes first (authoritative branch barcodes), catalog alt as fallback.
   const barcodeIndex = new Map();
   const addCode = (code, sku) => { const c = normCode(code); if (c && !barcodeIndex.has(c)) barcodeIndex.set(c, sku); };
@@ -25,6 +29,7 @@ export function createResolver(stock, catalog, priceMap) {
       name,
       barcode: (stockItem && stockItem.barcode) || (cat && cat.alt) || "",
       onHand: stockItem ? stockItem.onHand : 0,
+      sport: sportMap.get(sku) || null,
       inStock: !!stockItem && stockItem.onHand > 1e-9,
       isAdjustment: !!stockItem && stockItem.isAdjustment,
       lots: stockItem ? stockItem.lots : [],
@@ -59,5 +64,21 @@ export function createResolver(stock, catalog, priceMap) {
     return out.sort((a, b) => a.name.localeCompare(b.name, "he"));
   }
 
-  return { resolve, search, resolveByBarcode, inStockList };
+  // In-stock items for one sport branch. MISC_SPORT gathers everything with no sport.
+  function inStockBySport(sport) {
+    return inStockList().filter((r) => (sport === MISC_SPORT ? !r.sport : r.sport === sport));
+  }
+
+  // { sport → in-stock count }, used to render the category tiles. Only sports with ≥1
+  // in-stock item appear; uncategorized items roll up under MISC_SPORT.
+  function sportCounts() {
+    const counts = {};
+    for (const r of inStockList()) {
+      const key = r.sport || MISC_SPORT;
+      counts[key] = (counts[key] || 0) + 1;
+    }
+    return counts;
+  }
+
+  return { resolve, search, resolveByBarcode, inStockList, inStockBySport, sportCounts };
 }

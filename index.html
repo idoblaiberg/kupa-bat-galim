@@ -21,11 +21,13 @@
     <!-- Catalog / search -->
     <section class="pane">
       <div class="search-bar">
-        <input id="searchInput" type="text" placeholder='חפש מוצר, מק"ט…' autocomplete="off">
+        <input id="searchInput" type="text" placeholder='חפש מוצר או קטגוריה…' autocomplete="off">
+        <button class="clear-btn hidden" id="searchClear" title="נקה">✕</button>
         <button class="scan-btn" id="scanBtn">📷 סרוק</button>
       </div>
-      <div class="section-lbl" id="catalogLbl">במלאי</div>
-      <div class="results" id="results"></div>
+      <div class="section-lbl" id="catalogLbl">מה מחפשים?</div>
+      <div class="category-grid hidden" id="categoryGrid"></div>
+      <div class="results hidden" id="results"></div>
     </section>
 
     <!-- Cart (desktop) -->
@@ -118,6 +120,6 @@
   </div>
 
   <div id="toast"></div>
-  <script type="module" src="src/ui/app.js?v=3"></script>
+  <script type="module" src="src/ui/app.js?v=4"></script>
 </body>
 </html>
