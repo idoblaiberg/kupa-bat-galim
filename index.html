@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>קופה — בת גלים</title>
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800;900&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="src/ui/styles.css?v=3">
+  <link rel="stylesheet" href="src/ui/styles.css?v=4">
   <script src="https://accounts.google.com/gsi/client" defer></script>
 </head>
 <body>
@@ -13,17 +13,27 @@
     <h1>קופה ראשית</h1>
     <span class="spacer"></span>
     <span class="pill" id="freshPill">טוען…</span>
-    <button class="icon-btn" id="signOutBtn" title="התנתק">👤</button>
-    <button class="icon-btn" id="settingsBtn" title="הגדרות">⚙︎</button>
+    <button class="icon-btn" id="signOutBtn" title="התנתק" aria-label="התנתק">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="3.4"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0" stroke-linecap="round"/></svg>
+    </button>
+    <button class="icon-btn" id="settingsBtn" title="הגדרות" aria-label="הגדרות">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.2 5.2l2.1 2.1M16.7 16.7l2.1 2.1M18.8 5.2l-2.1 2.1M7.3 16.7l-2.1 2.1"/></svg>
+    </button>
   </header>
 
   <main class="layout">
     <!-- Catalog / search -->
     <section class="pane">
       <div class="search-bar">
-        <input id="searchInput" type="text" placeholder='חפש מוצר או קטגוריה…' autocomplete="off">
+        <div class="search-field">
+          <svg class="search-ico" width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="#5a5c60" stroke-width="2"><circle cx="8" cy="8" r="6"/><path d="M12.5 12.5L16 16" stroke-linecap="round"/></svg>
+          <input id="searchInput" type="text" placeholder='חפש מוצר או קטגוריה…' autocomplete="off">
+        </div>
         <button class="clear-btn hidden" id="searchClear" title="נקה">✕</button>
-        <button class="scan-btn" id="scanBtn">📷 סרוק</button>
+        <button class="scan-btn" id="scanBtn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="13" rx="2"/><circle cx="12" cy="12.5" r="3.2"/><path d="M8 6l1.2-2h5.6L16 6"/></svg>
+          סרוק
+        </button>
       </div>
       <div class="section-lbl" id="catalogLbl">מה מחפשים?</div>
       <div class="category-grid hidden" id="categoryGrid"></div>
@@ -58,12 +68,13 @@
   <div class="sheet" id="customerSheet">
     <div class="sheet-head"><h2>פרטי לקוח</h2><button class="x" data-close="customerSheet">✕</button></div>
     <div class="modal-body">
-      <div class="field"><label>שם מלא <span class="req">*</span></label><input id="custName" type="text" autocomplete="off"></div>
-      <div class="field"><label>טלפון <span class="req">*</span></label><input id="custPhone" type="tel" inputmode="tel" autocomplete="off"></div>
+      <div class="field" id="custNameField"><label>שם מלא <span class="req">*</span></label><input id="custName" type="text" autocomplete="off"><div class="err">יש להזין שם</div></div>
+      <div class="field" id="custPhoneField"><label>טלפון <span class="req">*</span></label><input id="custPhone" type="tel" inputmode="tel" autocomplete="off"><div class="err">יש להזין טלפון</div></div>
       <div class="field id-field" id="idField">
         <label>תעודת זהות <span class="req" id="custIdReq">*</span></label>
         <input id="custId" type="text" inputmode="numeric" autocomplete="off">
         <div class="hint">נדרשת כשהסכום מעל ₪5,000</div>
+        <div class="err">יש להזין תעודת זהות</div>
       </div>
       <button class="btn btn-primary" id="toPacketBtn" style="width:100%">צור בקשת מכירה ←</button>
     </div>
@@ -81,10 +92,19 @@
         <li>הפיקו תעודת החזרה (34) מקושרת לתעודות המשלוח (31)</li>
       </ul>
       <div class="btn-row">
-        <button class="btn btn-ghost" id="copyBtn">📋 העתק</button>
-        <button class="btn btn-primary" id="waBtn">💬 שלח ב-WhatsApp</button>
+        <button class="btn btn-ghost" id="copyBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="1.5"/><path d="M5 15V5a1 1 0 0 1 1-1h9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          העתק
+        </button>
+        <button class="btn btn-primary" id="waBtn">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2zm0 2a8 8 0 1 1-4.1 14.9l-.5-.3-2.5.7.7-2.4-.3-.5A8 8 0 0 1 12 4z"/></svg>
+          שלח ב-WhatsApp
+        </button>
       </div>
-      <button class="btn btn-ghost" id="newSaleBtn" style="width:100%;margin-top:10px">✓ מכירה חדשה</button>
+      <button class="btn btn-ghost" id="newSaleBtn" style="width:100%;margin-top:10px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg>
+        מכירה חדשה
+      </button>
     </div>
   </div>
 
@@ -120,6 +140,6 @@
   </div>
 
   <div id="toast"></div>
-  <script type="module" src="src/ui/app.js?v=4"></script>
+  <script type="module" src="src/ui/app.js?v=5"></script>
 </body>
 </html>
