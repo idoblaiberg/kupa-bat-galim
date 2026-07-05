@@ -8,6 +8,8 @@ export const ALLOWED_EMAILS = [
 
 // Google Drive IDs — safe to commit; Drive rejects requests without a valid OAuth token
 export const DRIVE = {
-  stockSheetId: '1BU2eucGRG4NkexiLiM_sfZjpq1aNHPNnuRD4qQPHvdk',
-  pricesFileId:  '19DvaQHvMKmCz8rN6Wt3jqK5jnPNrKmbT',
+  // Stock is an uploaded Excel (.xlsx) file — downloaded as binary and parsed in-browser
+  // (Drive can't CSV-export uploaded Office files, only native Sheets).
+  stockFileId: '1RN2zCBW9oGz9fr0L9F4bUA5Qc93JbmG-',
+  pricesFileId: '19DvaQHvMKmCz8rN6Wt3jqK5jnPNrKmbT',
 };
