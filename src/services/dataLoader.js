@@ -2,6 +2,7 @@
 // app still opens offline at the counter. Sources are configurable (Google Drive / any public URL).
 // Stock is the scheduled Finansit 31/34 export; prices are the website price report (optional).
 import { parseCSV } from "../utils/csv.js";
+import { xlsxToSheets, rowsToObjects } from "../utils/xlsx.js";
 import { buildStock } from "./stockEngine.js";
 import { buildFromStock } from "./catalog.js";
 import { parsePrices } from "./prices.js";
@@ -39,8 +40,23 @@ async function fetchText(url) {
   return r.text();
 }
 
-function build({ stock, prices }) {
-  const { items, issues } = buildStock(parseCSV(stock));
+// Header row of the recognizable Finansit stock sheet (authoritative or personal-copy aliases).
+const STOCK_SKU_HEADERS = ["NullFinansitItemNo", "ItemNo"];
+
+// Pick the worksheet that holds the document line items (has a SKU column), then key it by header.
+function stockRowsFromXlsx(sheets) {
+  for (const s of sheets) {
+    const header = (s.rows[0] || []).map((h) => String(h).trim());
+    if (STOCK_SKU_HEADERS.some((k) => header.includes(k))) return rowsToObjects(s.rows);
+  }
+  const named = sheets.find((s) => s.name === "FinDocLines") || sheets[0];
+  return named ? rowsToObjects(named.rows) : [];
+}
+
+// Accepts either a raw CSV string (dev/local path) or already-parsed row objects (xlsx path).
+function build({ stock, stockRows, prices }) {
+  const rows = stockRows || parseCSV(stock || "");
+  const { items, issues } = buildStock(rows);
   const cat = buildFromStock(items);
   const { priceMap, sportMap } = parsePrices(parseCSV(prices || ""));
   const resolver = createResolver(items, cat, priceMap, sportMap);
@@ -82,23 +98,26 @@ export async function loadData() {
   }
 }
 
-async function fetchFromDrive(fileId, accessToken, isSheet = false) {
-  const url = isSheet
-    ? `https://www.googleapis.com/drive/v3/files/${fileId}/export?mimeType=text%2Fcsv`
-    : `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
+// `cache: "no-store"` means every app open re-downloads the current Drive files (fresh reload).
+async function driveFetch(fileId, accessToken) {
+  const url = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
   const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` }, cache: "no-store" });
   if (res.status === 401) throw new Error("TOKEN_EXPIRED");
   if (!res.ok) throw new Error(`Drive ${res.status}`);
-  return res.text();
+  return res;
 }
+const fetchDriveText = (id, token) => driveFetch(id, token).then((r) => r.text());
+const fetchDriveBinary = (id, token) => driveFetch(id, token).then((r) => r.arrayBuffer());
 
 export async function loadDataAuthenticated(accessToken) {
   try {
-    const [stock, prices] = await Promise.all([
-      fetchFromDrive(DRIVE.stockSheetId, accessToken, true),
-      fetchFromDrive(DRIVE.pricesFileId, accessToken, false),
+    // Stock is an .xlsx binary (parsed in-browser); prices stay a plain CSV file.
+    const [stockBuf, prices] = await Promise.all([
+      fetchDriveBinary(DRIVE.stockFileId, accessToken),
+      fetchDriveText(DRIVE.pricesFileId, accessToken),
     ]);
-    const raw = { stock, prices };
+    const stockRows = stockRowsFromXlsx(await xlsxToSheets(stockBuf));
+    const raw = { stockRows, prices };
     localStorage.setItem(LS_CACHE, JSON.stringify({ raw, cachedAt: new Date().toISOString() }));
     return { data: build(raw), fresh: true, cachedAt: new Date().toISOString() };
   } catch (err) {
