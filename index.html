@@ -93,10 +93,11 @@
   <div class="sheet" id="settingsSheet">
     <div class="sheet-head"><h2>הגדרות</h2><button class="x" data-close="settingsSheet">✕</button></div>
     <div class="modal-body">
-      <div class="hint-box">פתחו את הקובץ ב-Google Sheets ← שתף ← העתק קישור ("כל מי שיש לו את הקישור"). הדביקו את הקישור כאן.</div>
-      <div class="field"><label>מלאי — קישור CSV (תעודות 31/34)</label><input id="srcStock" type="text" inputmode="url" autocomplete="off"></div>
-      <div class="field"><label>מחירים — קישור CSV (אתר)</label><input id="srcPrices" type="text" inputmode="url" autocomplete="off"></div>
+      <div class="hint-box">עוקף רק במכשיר הזה. השאירו ריק כדי להשתמש בקובץ ברירת המחדל שכולם רואים. להחלפת הקובץ לכולם — יש לעדכן את ה-config בקוד.</div>
+      <div class="field"><label>מלאי — קישור לקובץ (Drive/Sheets)</label><input id="srcStock" type="text" inputmode="url" autocomplete="off" placeholder="ברירת מחדל (config)"></div>
+      <div class="field"><label>מחירים — קישור לקובץ (Drive/Sheets)</label><input id="srcPrices" type="text" inputmode="url" autocomplete="off" placeholder="ברירת מחדל (config)"></div>
       <button class="btn btn-primary" id="saveSourcesBtn" style="width:100%">שמור וטען מחדש</button>
+      <button class="btn btn-ghost" id="resetSourcesBtn" style="width:100%;margin-top:10px">↺ חזרה לברירת מחדל</button>
     </div>
   </div>
 
@@ -120,6 +121,6 @@
   </div>
 
   <div id="toast"></div>
-  <script type="module" src="src/ui/app.js?v=5"></script>
+  <script type="module" src="src/ui/app.js?v=6"></script>
 </body>
 </html>

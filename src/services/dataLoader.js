@@ -7,7 +7,8 @@ import { buildStock } from "./stockEngine.js";
 import { buildFromStock } from "./catalog.js";
 import { parsePrices } from "./prices.js";
 import { createResolver } from "./productResolver.js";
-import { DRIVE } from "../config.js";
+import { DRIVE, ADMIN_EMAILS } from "../config.js";
+import { getUserEmail } from "../auth.js";
 
 const LS_SOURCES = "kupa_sources";
 const LS_CACHE = "kupa_cache";
@@ -22,6 +23,11 @@ export function getSources() {
   catch { return { ...DEFAULT_SOURCES }; }
 }
 export function setSources(s) { localStorage.setItem(LS_SOURCES, JSON.stringify(s)); }
+export function clearSources() { localStorage.removeItem(LS_SOURCES); }
+// Raw admin override only (no ./data defaults) — for the Settings screen: empty = shared default.
+export function getSourceOverride() {
+  try { return JSON.parse(localStorage.getItem(LS_SOURCES) || "{}"); } catch { return {}; }
+}
 
 // Convert a Google Sheets share/edit URL to its CSV export URL.
 // Works for any sheet shared as "Anyone with the link".
@@ -38,6 +44,13 @@ async function fetchText(url) {
   const r = await fetch(normalizeUrl(url), { cache: "no-store" });
   if (!r.ok) throw new Error(`HTTP ${r.status} for ${url}`);
   return r.text();
+}
+
+// Extract a Drive/Sheets file id from any share/edit/view URL (…/d/<id>/… or …?id=<id>).
+// Lets the Settings link actually control the signed-in source; non-URLs (dev ./data paths) → null.
+export function driveIdFromUrl(url) {
+  const m = /\/d\/([A-Za-z0-9_-]{20,})/.exec(url || "") || /[?&]id=([A-Za-z0-9_-]{20,})/.exec(url || "");
+  return m ? m[1] : null;
 }
 
 // Header row of the recognizable Finansit stock sheet (authoritative or personal-copy aliases).
@@ -135,10 +148,16 @@ async function fetchDriveText(fileId, accessToken) {
 
 export async function loadDataAuthenticated(accessToken) {
   try {
+    // Everyone loads the file ids baked into config (DRIVE). Only an admin's Settings override
+    // (a Drive/Sheets link on their own device) can repoint it — regular staff always get the
+    // shared default, so opening the app "just works" with no settings to touch.
+    const src = ADMIN_EMAILS.includes(getUserEmail()) ? getSources() : {};
+    const stockId = driveIdFromUrl(src.stock) || DRIVE.stockFileId;
+    const pricesId = driveIdFromUrl(src.prices) || DRIVE.pricesFileId;
     // Stock is parsed to rows (xlsx or Sheet); prices stay a plain CSV file.
     const [stockRows, prices] = await Promise.all([
-      fetchStockRows(DRIVE.stockFileId, accessToken),
-      fetchDriveText(DRIVE.pricesFileId, accessToken),
+      fetchStockRows(stockId, accessToken),
+      fetchDriveText(pricesId, accessToken),
     ]);
     const raw = { stockRows, prices };
     localStorage.setItem(LS_CACHE, JSON.stringify({ raw, cachedAt: new Date().toISOString() }));

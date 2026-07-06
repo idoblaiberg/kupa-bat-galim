@@ -6,6 +6,12 @@ export const ALLOWED_EMAILS = [
   'ysbyamit@gmail.com',
 ];
 
+// Admins see the Settings gear and can repoint the app at a different file (on their own device).
+// Everyone else just loads the file baked into DRIVE below — no settings, no setup.
+export const ADMIN_EMAILS = [
+  'blaiberg.ido@gmail.com',
+];
+
 // Google Drive IDs — safe to commit; Drive rejects requests without a valid OAuth token
 export const DRIVE = {
   // Stock is an uploaded Excel (.xlsx) file — downloaded as binary and parsed in-browser

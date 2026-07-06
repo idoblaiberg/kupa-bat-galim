@@ -1,7 +1,8 @@
 // Kupa app — boot, render, and wire the whole flow. Vanilla ES modules, RTL Hebrew.
-import { loadDataAuthenticated, getSources, setSources } from "../services/dataLoader.js";
+import { loadDataAuthenticated, setSources, clearSources, getSourceOverride } from "../services/dataLoader.js?v=6";
 import { MISC_SPORT } from "../services/productResolver.js";
 import { initAuth, signOut, getUserEmail } from "../auth.js";
+import { ADMIN_EMAILS } from "../config.js";
 import { createCart } from "../store/cartStore.js";
 import { buildPacket, packetToText } from "../services/packetBuilder.js";
 import { formatILS } from "../utils/money.js";
@@ -25,6 +26,16 @@ async function boot() {
       wireUI();
       setFreshness(fresh, cachedAt);
       showCategoryGrid();
+      // Loaded fine but nothing in stock → almost always a file/format mismatch, not a real
+      // empty branch. Explain it instead of showing a blank grid that reads as "broken".
+      if (fresh && stats.inStock === 0) {
+        el("categoryGrid").classList.add("hidden");
+        const box = el("results");
+        box.classList.remove("hidden");
+        clear(box);
+        box.append(create("div", { class: "empty" },
+          "הקובץ נטען אך לא נמצאו פריטים במלאי. ודאו שקובץ המלאי הוא ייצוא Finansit (תעודות 31/34) עם עמודות מק\"ט/כמות/סוג."));
+      }
       renderCart(cart.getState());
       consumeScanHash();
     } catch (e) {
@@ -56,6 +67,8 @@ function wireUI() {
     if (confirm(`מחובר: ${email}\n\nלהתנתק?`)) signOut();
   });
   el("signOutBtn").title = getUserEmail() || "התנתק";
+  // Settings is admin-only — regular staff never see the gear and always get the shared file.
+  if (!ADMIN_EMAILS.includes(getUserEmail())) el("settingsBtn").style.display = "none";
   el("searchInput").addEventListener("input", (e) => {
     clearTimeout(searchTimer);
     const q = e.target.value;
@@ -280,16 +293,21 @@ function closeSheet(id) {
   el(id).classList.remove("show"); el(id + "Bd").classList.remove("show");
 }
 
-// ── Settings ──────────────────────────────────────────────────────────────
+// ── Settings (admin only) ──────────────────────────────────────────────────
 function openSettings() {
-  const s = getSources();
-  el("srcStock").value = s.stock; el("srcPrices").value = s.prices;
+  const s = getSourceOverride(); // empty fields = using the shared default file from config
+  el("srcStock").value = s.stock || ""; el("srcPrices").value = s.prices || "";
   openSheet("settingsSheet");
 }
 function bindSettings() {
   el("saveSourcesBtn").addEventListener("click", () => {
-    setSources({ stock: el("srcStock").value.trim(), prices: el("srcPrices").value.trim() });
+    const stock = el("srcStock").value.trim(), prices = el("srcPrices").value.trim();
+    // Empty → drop the override and fall back to the shared default; otherwise save this device's override.
+    if (!stock && !prices) clearSources(); else setSources({ stock, prices });
     toast("נשמר — טוען מחדש"); location.reload();
+  });
+  el("resetSourcesBtn").addEventListener("click", () => {
+    clearSources(); toast("חזרה לקובץ ברירת המחדל"); location.reload();
   });
 }
 
