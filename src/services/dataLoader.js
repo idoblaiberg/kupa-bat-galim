@@ -99,24 +99,42 @@ export async function loadData() {
 }
 
 // `cache: "no-store"` means every app open re-downloads the current Drive files (fresh reload).
-async function driveFetch(fileId, accessToken) {
-  const url = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
-  const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` }, cache: "no-store" });
+const authHeaders = (accessToken) => ({ headers: { Authorization: `Bearer ${accessToken}` }, cache: "no-store" });
+
+async function driveGet(fileId, accessToken, { export: exportMime } = {}) {
+  const base = `https://www.googleapis.com/drive/v3/files/${fileId}`;
+  const url = exportMime ? `${base}/export?mimeType=${encodeURIComponent(exportMime)}` : `${base}?alt=media`;
+  const res = await fetch(url, authHeaders(accessToken));
   if (res.status === 401) throw new Error("TOKEN_EXPIRED");
-  if (!res.ok) throw new Error(`Drive ${res.status}`);
   return res;
 }
-const fetchDriveText = (id, token) => driveFetch(id, token).then((r) => r.text());
-const fetchDriveBinary = (id, token) => driveFetch(id, token).then((r) => r.arrayBuffer());
+
+// Stock may be an uploaded .xlsx (downloadable as binary) OR a native Google Sheet (which Drive
+// refuses to alt=media with 403 — it must be exported). Handle both so the file "just works".
+async function fetchStockRows(fileId, accessToken) {
+  const media = await driveGet(fileId, accessToken);
+  if (media.ok) return stockRowsFromXlsx(await xlsxToSheets(await media.arrayBuffer()));
+  if (media.status === 403) {
+    const csv = await driveGet(fileId, accessToken, { export: "text/csv" });
+    if (!csv.ok) throw new Error(`Drive export ${csv.status}`);
+    return parseCSV(await csv.text());
+  }
+  throw new Error(`Drive ${media.status}`);
+}
+
+async function fetchDriveText(fileId, accessToken) {
+  const res = await driveGet(fileId, accessToken);
+  if (!res.ok) throw new Error(`Drive ${res.status}`);
+  return res.text();
+}
 
 export async function loadDataAuthenticated(accessToken) {
   try {
-    // Stock is an .xlsx binary (parsed in-browser); prices stay a plain CSV file.
-    const [stockBuf, prices] = await Promise.all([
-      fetchDriveBinary(DRIVE.stockFileId, accessToken),
+    // Stock is parsed to rows (xlsx or Sheet); prices stay a plain CSV file.
+    const [stockRows, prices] = await Promise.all([
+      fetchStockRows(DRIVE.stockFileId, accessToken),
       fetchDriveText(DRIVE.pricesFileId, accessToken),
     ]);
-    const stockRows = stockRowsFromXlsx(await xlsxToSheets(stockBuf));
     const raw = { stockRows, prices };
     localStorage.setItem(LS_CACHE, JSON.stringify({ raw, cachedAt: new Date().toISOString() }));
     return { data: build(raw), fresh: true, cachedAt: new Date().toISOString() };
