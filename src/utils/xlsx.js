@@ -103,6 +103,13 @@ function readSheet(doc, shared) {
         if (is) val = [...kids(is, "t")].map(textOf).join("");
       } else {
         val = textOf(kids(c, "v")[0]);
+        // Finansit's xlsx stores every number as a float ("34.0", "352873.0") and some ids in
+        // scientific form ("9.01E12"). Render integer-valued numbers plainly so doc-type / doc-no /
+        // line / barcode survive the engine's exact string compares (the old CSV export had no ".0").
+        if (val !== "") {
+          const n = Number(val);
+          if (Number.isInteger(n) && Math.abs(n) < 1e15) val = String(n);
+        }
       }
       cells[idx] = val;
     }
