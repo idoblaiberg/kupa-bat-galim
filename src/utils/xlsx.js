@@ -11,6 +11,9 @@ const RNS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships
 
 // ── ZIP container ───────────────────────────────────────────────────────────
 async function inflateRaw(bytes) {
+  if (typeof DecompressionStream === "undefined") {
+    throw new Error("הדפדפן ישן מדי לקריאת קובץ Excel — עדכנו את הדפדפן (iOS 16.4+)");
+  }
   const ds = new DecompressionStream("deflate-raw");
   const stream = new Blob([bytes]).stream().pipeThrough(ds);
   return new Uint8Array(await new Response(stream).arrayBuffer());

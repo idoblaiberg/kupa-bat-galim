@@ -30,8 +30,13 @@ async function boot() {
     } catch (e) {
       if (String(e).includes("TOKEN_EXPIRED")) { sessionStorage.clear(); location.reload(); return; }
       console.error("loadDataAuthenticated failed:", e);
-      clear(el("results"));
-      el("results").append(create("div", { class: "empty" }, `שגיאה: ${e.message || e}`));
+      const pill = el("freshPill");
+      pill.textContent = "שגיאה בטעינה"; pill.classList.add("stale");
+      el("categoryGrid").classList.add("hidden");
+      const box = el("results");
+      box.classList.remove("hidden"); // was hidden by default — otherwise the error is invisible
+      clear(box);
+      box.append(create("div", { class: "empty" }, `שגיאה בטעינת הנתונים: ${e.message || e}`));
     }
   });
 }
