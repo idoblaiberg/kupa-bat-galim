@@ -44,13 +44,18 @@ async function fetchText(url) {
 const STOCK_SKU_HEADERS = ["NullFinansitItemNo", "ItemNo"];
 
 // Pick the worksheet that holds the document line items (has a SKU column), then key it by header.
+// If nothing matches, fail loudly with what we DID find — a silent empty catalog looks like a
+// broken app, so surface the sheet names + headers to make a wrong file/format obvious.
 function stockRowsFromXlsx(sheets) {
   for (const s of sheets) {
     const header = (s.rows[0] || []).map((h) => String(h).trim());
     if (STOCK_SKU_HEADERS.some((k) => header.includes(k))) return rowsToObjects(s.rows);
   }
-  const named = sheets.find((s) => s.name === "FinDocLines") || sheets[0];
-  return named ? rowsToObjects(named.rows) : [];
+  const found = sheets.map((s) => `"${s.name}" [${(s.rows[0] || []).slice(0, 8).join(", ")}]`).join(" · ");
+  throw new Error(
+    `לא נמצאה עמודת מק"ט (${STOCK_SKU_HEADERS.join(" / ")}) בקובץ המלאי. ` +
+    `גיליונות שנמצאו: ${found || "אין"}`
+  );
 }
 
 // Accepts either a raw CSV string (dev/local path) or already-parsed row objects (xlsx path).
