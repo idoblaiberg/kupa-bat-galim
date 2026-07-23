@@ -11,7 +11,8 @@ export function buildFromStock(stockItems) {
   const products = [];
   const bySku = new Map();
   for (const [sku, it] of stockItems) {
-    const p = { sku, name: it.name || sku, alt: it.barcode || "" };
+    // alt = barcode (EAN); altNum = מספר חליפי (shelf-label code). Both are searchable.
+    const p = { sku, name: it.name || sku, alt: it.barcode || "", altNum: it.altNum || "" };
     products.push(p);
     bySku.set(sku, p);
   }
@@ -23,8 +24,10 @@ export function buildFromStock(stockItems) {
     const out = [];
     for (const p of products) {
       const hit =
-        norm(p.sku).includes(lq) || norm(p.name).includes(lq) || norm(p.alt).includes(lq) ||
-        (nq.length >= 4 && (normCode(p.sku).includes(nq) || normCode(p.alt).includes(nq)));
+        norm(p.sku).includes(lq) || norm(p.name).includes(lq) ||
+        norm(p.alt).includes(lq) || norm(p.altNum).includes(lq) ||
+        (nq.length >= 4 && (normCode(p.sku).includes(nq) || normCode(p.alt).includes(nq) ||
+          normCode(p.altNum).includes(nq)));
       if (hit) { out.push(p); if (out.length >= limit) break; }
     }
     return out;

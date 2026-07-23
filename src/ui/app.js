@@ -156,11 +156,34 @@ function productRow(r) {
 
 // ── Cart ──────────────────────────────────────────────────────────────────
 function renderCart(state) {
+  // The cart re-renders wholesale on every change (clear + rebuild), which destroys the
+  // discount input mid-edit and drops the keyboard. Capture the focused field, then re-focus
+  // the freshly-built node afterwards so typing stays uninterrupted.
+  const focus = captureDiscFocus();
   const allocs = new Map(cart.lineAllocations().map((a) => [a.sku, a]));
   [el("cartPanel"), el("cartSheetBody")].forEach((host) => { if (host) renderCartInto(host, state, allocs); });
   const t = state.totals;
   el("mobileTotal").textContent = formatILS(t.total);
   el("mobileSub").textContent = `${t.itemCount} פריטים`;
+  restoreDiscFocus(focus);
+}
+// Discount fields are the only inputs inside the re-rendered cart region. Each carries a stable
+// data-disc id ("line:<sku>" or "whole") and lives in one of two hosts (desktop panel / mobile sheet).
+function captureDiscFocus() {
+  const a = document.activeElement;
+  if (!a || !a.classList || !a.classList.contains("disc")) return null;
+  const host = a.closest("#cartPanel, #cartSheetBody");
+  let start = null, end = null;
+  try { start = a.selectionStart; end = a.selectionEnd; } catch {} // number inputs may not expose selection
+  return { hostId: host && host.id, key: a.getAttribute("data-disc"), start, end };
+}
+function restoreDiscFocus(saved) {
+  if (!saved || !saved.hostId || !saved.key) return;
+  const host = el(saved.hostId);
+  const input = host && host.querySelector(`.disc[data-disc="${saved.key}"]`);
+  if (!input) return;
+  input.focus();
+  if (saved.start != null) { try { input.setSelectionRange(saved.start, saved.end); } catch {} }
 }
 function renderCartInto(host, state, allocs) {
   clear(host);
@@ -183,6 +206,7 @@ function cartLine(l, alloc) {
         create("span", {}, l.qty),
         create("button", { onclick: () => cart.setQty(l.sku, l.qty + 1) }, "+")),
       create("input", { class: "disc", type: "number", min: 0, max: 100, value: l.lineDiscountPct || "",
+        "data-disc": "line:" + l.sku,
         placeholder: "% הנחה", oninput: (e) => cart.setLineDiscount(l.sku, e.target.value) }),
       create("span", { class: "lt" }, formatILS(l.net))),
     over ? create("div", { class: "warn" }, `במלאי רק ${l.onHand}`) : null,
@@ -195,6 +219,7 @@ function totalsBlock(state) {
     create("div", { class: "r" },
       create("span", { class: "wd" }, "הנחה כללית ",
         create("input", { class: "disc", type: "number", min: 0, max: 100, value: state.wholeListDiscountPct || "",
+          "data-disc": "whole",
           placeholder: "%", oninput: (e) => cart.setWholeDiscount(e.target.value) })),
       create("span", {}, "−" + formatILS(t.wholeDiscountAmount))),
     create("div", { class: "r grand" }, create("span", {}, 'סה"כ'), create("span", {}, formatILS(t.total))),
@@ -213,21 +238,34 @@ function openCustomer() {
   el("custId").value = s.customer.idNumber;
   el("idField").classList.toggle("show", s.totals.requiresId);
   el("custIdReq").style.display = s.totals.requiresId ? "" : "none";
+  clearCustErrors();
   closeSheet("cartSheet");
   openSheet("customerSheet");
 }
+// Each required-field error maps to the wrapper that gets the .invalid (ink-on-blush) treatment.
+const CUST_FIELD = { "name-required": "custNameField", "phone-required": "custPhoneField", "id-required": "idField" };
+function clearCustErrors() { Object.values(CUST_FIELD).forEach((id) => el(id).classList.remove("invalid")); }
 function bindCustomer() {
-  el("custName").addEventListener("input", (e) => cart.setCustomer({ fullName: e.target.value }));
-  el("custPhone").addEventListener("input", (e) => cart.setCustomer({ phone: e.target.value }));
-  el("custId").addEventListener("input", (e) => cart.setCustomer({ idNumber: e.target.value }));
+  // Typing in a field clears its own error; keep cart state in sync as before.
+  const sync = (input, fieldId, patch) => input.addEventListener("input", (e) => {
+    cart.setCustomer(patch(e.target.value));
+    el(fieldId).classList.remove("invalid");
+  });
+  sync(el("custName"), "custNameField", (v) => ({ fullName: v }));
+  sync(el("custPhone"), "custPhoneField", (v) => ({ phone: v }));
+  sync(el("custId"), "idField", (v) => ({ idNumber: v }));
   el("toPacketBtn").addEventListener("click", () => {
     // Read inputs directly so autofill/paste always sync (not just keystroke events).
     cart.setCustomer({ fullName: el("custName").value, phone: el("custPhone").value, idNumber: el("custId").value });
     const v = cart.validation();
+    clearCustErrors();
     if (!v.ok) {
+      v.errors.forEach((e) => { if (CUST_FIELD[e]) el(CUST_FIELD[e]).classList.add("invalid"); });
       const msg = { "name-required": "חסר שם", "phone-required": "חסר טלפון",
         "id-required": 'חסרה ת"ז (מעל ₪5,000)', "price-required": "יש פריט ללא מחיר" };
       toast(v.errors.map((e) => msg[e] || e).filter(Boolean)[0] || "חסרים פרטים");
+      const firstField = v.errors.map((e) => CUST_FIELD[e]).find(Boolean);
+      if (firstField) el(firstField).querySelector("input").focus();
       return;
     }
     closeSheet("customerSheet");

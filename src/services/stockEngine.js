@@ -17,6 +17,7 @@ const FIELD = {
   docNo:   ["NullFinansitItemDocNo", "DocNo"],
   origin:  ["NullFinansitItemOriginDoc", "ItemOriginDoc"],
   barcode: ["NullFinansitItmBarcode", "Barcode"],
+  altNum:  ["NullFinansitAltNum", "AltNum"], // מספר חליפי — printed on shelf labels
   line:    ["NullFinansitIvlLine"],
 };
 
@@ -54,6 +55,7 @@ export function buildStock(rows, { adjustmentSkus = DEFAULT_ADJUSTMENT_SKUS } = 
         sku,
         name: get(row, "name"),
         barcode: get(row, "barcode"),
+        altNum: get(row, "altNum"),
         cost: num(get(row, "cost")),
         onHand: 0,
         naiveOnHand: 0,
@@ -67,6 +69,7 @@ export function buildStock(rows, { adjustmentSkus = DEFAULT_ADJUSTMENT_SKUS } = 
       it.name = get(row, "name");
     }
     if (!it.barcode && get(row, "barcode")) it.barcode = get(row, "barcode");
+    if (!it.altNum && get(row, "altNum")) it.altNum = get(row, "altNum");
     return it;
   };
 
