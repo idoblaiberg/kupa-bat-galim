@@ -3,6 +3,7 @@ import { loadDataAuthenticated, setSources, clearSources, getSourceOverride } fr
 import { MISC_SPORT } from "../services/productResolver.js";
 import { initAuth, signOut, getUserEmail } from "../auth.js";
 import { ADMIN_EMAILS } from "../config.js";
+import { saveSale, getSales, deleteSale, clearAllSales } from "../services/salesLog.js";
 import { createCart } from "../store/cartStore.js";
 import { buildPacket, packetToText } from "../services/packetBuilder.js";
 import { formatILS } from "../utils/money.js";
@@ -92,6 +93,7 @@ function wireUI() {
     el("searchInput").focus();
   });
   el("scanBtn").addEventListener("click", openScanner);
+  el("historyBtn").addEventListener("click", openHistory);
   el("settingsBtn").addEventListener("click", openSettings);
   el("openCartBtn").addEventListener("click", () => openSheet("cartSheet"));
   document.querySelectorAll("[data-close]").forEach((b) => b.addEventListener("click", () => closeSheet(b.dataset.close)));
@@ -281,23 +283,32 @@ function openPacket() {
   el("packetText").textContent = text;
   openSheet("packetSheet");
 }
+function completeSale(msg) {
+  const state = cart.getState();
+  saveSale({
+    packetText: lastPacket ? packetToText(lastPacket) : "",
+    customer: { ...state.customer },
+    totals: state.totals,
+    lines: state.lines.map((l) => ({ name: l.name, qty: l.qty, net: l.net })),
+  });
+  cart.clear();
+  closeSheet("packetSheet");
+  el("searchInput").value = "";
+  el("searchClear").classList.add("hidden");
+  showCategoryGrid();
+  toast(msg);
+}
 function bindPacket() {
   el("copyBtn").addEventListener("click", async () => {
-    try { await navigator.clipboard.writeText(packetToText(lastPacket)); toast("הועתק ✓"); }
+    try { await navigator.clipboard.writeText(packetToText(lastPacket)); completeSale("הועתק ✓"); }
     catch { toast("העתקה נכשלה"); }
   });
   el("waBtn").addEventListener("click", () => {
     const url = "https://wa.me/?text=" + encodeURIComponent(packetToText(lastPacket));
     window.open(url, "_blank", "noopener");
+    completeSale("נשלח ב-WhatsApp ✓");
   });
-  el("newSaleBtn").addEventListener("click", () => {
-    cart.clear();
-    closeSheet("packetSheet");
-    el("searchInput").value = "";
-    el("searchClear").classList.add("hidden");
-    showCategoryGrid();
-    toast("מוכן למכירה הבאה");
-  });
+  el("newSaleBtn").addEventListener("click", () => completeSale("מוכן למכירה הבאה"));
 }
 
 // ── Scanner handoff (sibling yamit-scanner app, same origin) ────────────────
@@ -326,9 +337,37 @@ function consumeScanHash() {
 }
 
 // ── Sheets ────────────────────────────────────────────────────────────────
-function openSheet(id) { el(id).classList.add("show"); el(id + "Bd").classList.add("show"); }
+function openSheet(id) {
+  el(id).classList.add("show"); el(id + "Bd").classList.add("show");
+  document.body.style.overflow = "hidden";
+}
 function closeSheet(id) {
   el(id).classList.remove("show"); el(id + "Bd").classList.remove("show");
+  if (!document.querySelector(".sheet.show")) document.body.style.overflow = "";
+}
+
+// ── History ───────────────────────────────────────────────────────────────
+function openHistory() { renderHistory(); openSheet("historySheet"); }
+function renderHistory() {
+  const body = el("historySheetBody"); clear(body);
+  const sales = getSales();
+  if (!sales.length) { body.append(create("div", { class: "empty" }, "אין מכירות שמורות")); return; }
+  body.append(create("div", { style: "padding:12px 14px 0" },
+    create("button", { class: "btn btn-ghost", style: "width:100%",
+      onclick: () => { clearAllSales(); renderHistory(); toast("נמחקו כל המכירות"); } }, "מחק הכל")));
+  sales.forEach((s) => {
+    const d = new Date(s.at);
+    const dateStr = d.toLocaleDateString("he-IL") + " " + d.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" });
+    const itemsSummary = (s.lines || []).map((l) => `${l.name} ×${l.qty}`).join(", ");
+    body.append(create("div", { class: "sale-row" },
+      create("div", { class: "sale-info" },
+        create("div", { class: "sale-name" }, s.customer?.fullName || "(ללא שם)"),
+        create("div", { class: "sale-sub" }, s.customer?.phone || "", " · ", dateStr),
+        create("div", { class: "sale-sub sale-items" }, itemsSummary)),
+      create("div", { class: "sale-total" }, formatILS(s.totals?.total ?? 0)),
+      create("button", { class: "rm", title: "מחק",
+        onclick: () => { deleteSale(s.id); renderHistory(); } }, "✕")));
+  });
 }
 
 // ── Settings (admin only) ──────────────────────────────────────────────────

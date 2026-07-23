@@ -118,13 +118,16 @@ input { font-family:inherit; }
   transition:.2s; }
 .sheet-backdrop.show { opacity:1; visibility:visible; }
 .sheet { position:fixed; inset-inline:0; bottom:0; background:var(--bg); z-index:41;
-  border-radius:20px 20px 0 0; border-top:1.5px solid var(--ink); max-height:92vh; overflow-y:auto; transform:translateY(100%); transition:.25s; }
+  border-radius:20px 20px 0 0; border-top:1.5px solid var(--ink); max-height:92vh; display:flex; flex-direction:column;
+  overflow:hidden; transform:translateY(100%); transition:.25s; }
 .sheet.show { transform:translateY(0); }
-.sheet-head { display:flex; align-items:center; padding:16px 18px; border-bottom:1.5px solid var(--ink); }
+.sheet-head { display:flex; align-items:center; padding:16px 18px; border-bottom:1.5px solid var(--ink); flex-shrink:0; }
 .sheet-head h2 { font-size:22px; font-weight:900; flex:1; }
 .sheet-head .x { font-size:14px; background:transparent; border:1.5px solid var(--ink); color:var(--ink);
   width:30px; height:30px; display:grid; place-items:center; }
-.modal-body { padding:18px; }
+.modal-body { padding:18px; flex:1; overflow-y:auto; overscroll-behavior:contain; }
+#cartSheetBody { flex:1; overflow-y:auto; min-height:0; overscroll-behavior:contain; }
+.sheet .cart-lines { max-height:none; }
 .hint-box { font-family:var(--mono); font-size:12.5px; color:var(--brand-d); background:var(--brand-soft); border:1.5px solid var(--ink); padding:14px; margin-bottom:22px; line-height:1.65; }
 .field { margin-bottom:18px; }
 .field label { display:block; font-size:13.5px; font-weight:700; margin-bottom:8px; }
@@ -153,6 +156,14 @@ input { font-family:inherit; }
   display:flex; align-items:center; justify-content:center; gap:8px; }
 .btn-primary { background:var(--brand); color:var(--cream); border-color:var(--brand); }
 .btn-ghost { background:transparent; color:var(--brand); }
+
+/* History */
+.sale-row { display:flex; align-items:center; gap:12px; padding:12px 14px; border-bottom:1px solid var(--line); }
+.sale-info { flex:1; min-width:0; }
+.sale-name { font-size:14px; font-weight:600; }
+.sale-sub { font-size:12px; color:var(--muted); margin-top:2px; }
+.sale-items { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.sale-total { font-weight:700; font-size:15px; white-space:nowrap; }
 
 /* Scanner */
 #scanWrap { position:relative; background:#000; aspect-ratio:3/4; }

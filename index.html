@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>קופה — בת גלים</title>
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800;900&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="src/ui/styles.css?v=4">
+  <link rel="stylesheet" href="src/ui/styles.css?v=5">
   <script src="https://accounts.google.com/gsi/client" defer></script>
 </head>
 <body>
@@ -13,6 +13,9 @@
     <h1>קופה ראשית</h1>
     <span class="spacer"></span>
     <span class="pill" id="freshPill">טוען…</span>
+    <button class="icon-btn" id="historyBtn" title="מכירות קודמות" aria-label="מכירות קודמות">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5" stroke-linecap="round"/></svg>
+    </button>
     <button class="icon-btn" id="signOutBtn" title="התנתק" aria-label="התנתק">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="3.4"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0" stroke-linecap="round"/></svg>
     </button>
@@ -108,6 +111,13 @@
     </div>
   </div>
 
+  <!-- History sheet -->
+  <div class="sheet-backdrop" id="historySheetBd" data-close="historySheet"></div>
+  <div class="sheet" id="historySheet">
+    <div class="sheet-head"><h2>מכירות קודמות</h2><button class="x" data-close="historySheet">✕</button></div>
+    <div id="historySheetBody"></div>
+  </div>
+
   <!-- Settings sheet -->
   <div class="sheet-backdrop" id="settingsSheetBd" data-close="settingsSheet"></div>
   <div class="sheet" id="settingsSheet">
@@ -141,6 +151,6 @@
   </div>
 
   <div id="toast"></div>
-  <script type="module" src="src/ui/app.js?v=7"></script>
+  <script type="module" src="src/ui/app.js?v=8"></script>
 </body>
 </html>
