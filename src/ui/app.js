@@ -55,9 +55,11 @@ async function boot() {
 
 function setFreshness(fresh, cachedAt) {
   const pill = el("freshPill");
-  if (fresh) { pill.textContent = `${stats.inStock} פריטים במלאי`; pill.classList.remove("stale"); }
-  else { pill.textContent = "נתונים מהמטמון (לא עודכן)"; pill.classList.add("stale"); }
-  pill.title = `מחיר מהדוח: ${stats.priced} · מחושב: ${stats.computed} · ללא מחיר: ${stats.noPrice}`;
+  const status = fresh ? `${stats.inStock} פריטים במלאי` : "נתונים מהמטמון (לא עודכן)";
+  pill.textContent = status;
+  pill.classList.toggle("stale", !fresh);
+  // Text may be ellipsis-truncated on narrow screens — the title keeps the full status reachable.
+  pill.title = `${status} · מחיר מהדוח: ${stats.priced} · מחושב: ${stats.computed} · ללא מחיר: ${stats.noPrice}`;
 }
 
 // ── Catalog / search ──────────────────────────────────────────────────────
